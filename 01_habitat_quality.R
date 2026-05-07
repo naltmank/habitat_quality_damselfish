@@ -2,6 +2,9 @@ rm(list=ls())
 # install.packages("librarian")
 librarian::shelf(here, tidyverse, effects, ggplot2, ggpubr, glmmTMB, DHARMa, performance, emmeans, car)
 
+#### PLOT COLORS ####
+habitat_colors <- c("Backreef" = "#0072B2", "Fringing" = "#D55E00")
+
 #### NUTRIENTS ####
 nutrients <- read.csv(here::here("data", "lter_nutrient_data.csv"))
 
@@ -29,9 +32,9 @@ performance::r2(turb_cn_mod)
 ##### PLOT #####
 turbinaria_plot_df <- turbinaria %>%
   group_by(year, habitat) %>%
-  summarize(cn_mean = mean(CN_ratio, na.rm = T),
-            cn_se = sd(CN_ratio, na.rm = T)/sqrt(n()),
-            group = paste0(habitat, "-", year))
+  dplyr::summarise(cn_mean = mean(CN_ratio, na.rm = T),
+            cn_se = sd(CN_ratio, na.rm = T)/sqrt(n())) %>%
+  mutate(group = paste0(habitat, "-", year))
 
 
 (turbinaria_plot <- ggplot() +
@@ -47,7 +50,8 @@ turbinaria_plot_df <- turbinaria %>%
              label = "Habitat - P < 0.0001",
              hjust = 0, size = 8) +
     labs(title = "a.\n", x = "Year", y = "C:N\n") +
-    scale_colour_discrete(name = "Habitat") +
+    scale_colour_manual(name = "Habitat",
+                        values = habitat_colors) +
     theme_classic() +
     theme(panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank(),
@@ -116,6 +120,7 @@ performance::r2(outside_mod)
   geom_text(data = sed_letters, aes(x = territory_position, y = heights, group = reef_location,
                                     label = letters),
             position = position_dodge(0.75), size = 8) +
+  scale_colour_manual(values = habitat_colors) +
   scale_y_log10() +
   theme_classic() +
   labs(title = "b.\n", x = "Territory position",
@@ -153,7 +158,7 @@ piscivore <- fish %>%
   filter(lter_region == 1) %>%
   filter(habitat != "FO") %>%
   group_by(year, habitat, transect_no) %>%
-  summarise(biomass_sum = sum(biomass, na.rm = T))
+  dplyr::summarise(biomass_sum = sum(biomass, na.rm = T))
 
 # subset scrapers and grazers - primary competitors with damselfishes
 herbivore <- fish %>%
@@ -234,9 +239,10 @@ fish_plot_df <- relevant_fish %>%
              label = "Herbivores - P = 0.051\nPiscivores - P < 0.001",
              hjust = 1, size = 7) +
   scale_y_log10(limits = c(1,75000)) +
-  scale_colour_discrete(name = "Habitat",
-                        labels = c("BA" = "Backreef",
-                                   "FR" = "Fringing")) +
+  scale_colour_manual(name = "Habitat",
+                      labels = c("BA" = "Backreef",
+                                 "FR" = "Fringing"),
+                      values = c("BA" = "#0072B2", "FR" = "#D55E00")) +
   scale_shape_manual(name = "Fish guild",
                      values = c("herbivore" = 19,
                                 "piscivore" = 1),
